@@ -1,6 +1,9 @@
 # 第一阶段：构建阶段
 FROM maven:3.6.3-openjdk-8 AS builder
 WORKDIR /app
+# 将宿主mvn依赖复制到容器里，不必每次运行都进行拉取，若不需要可注释掉
+COPY ./repo /root/.m2/repository
+# 复制代码
 COPY . .
 RUN mvn clean package -DskipTests
 

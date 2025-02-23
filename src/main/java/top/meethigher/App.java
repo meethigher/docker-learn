@@ -15,6 +15,12 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Properties;
 
 public class App {
@@ -26,10 +32,32 @@ public class App {
     private static Handler<RoutingContext> routingContextHandler() {
         return ctx -> {
             HttpServerResponse response = ctx.response();
-            response.putHeader("Content-Type", "application/json;charset=utf-8");
-            String template = "{\"project\":\"%s\",\"url\":\"%s\"}";
+            response.putHeader("Content-Type", "text/plain;charset=utf-8");
+            String url = System.getenv("DB_URL");
+            String user = System.getenv("DB_USER");
+            String password = System.getenv("DB_PASSWORD");
 
-            response.end(String.format(template, project, ctx.request().uri()));
+            try (Connection conn = DriverManager.getConnection(url, user, password);
+                 Statement stmt = conn.createStatement()) {
+
+                log.info("成功连接到 PostgreSQL 数据库！");
+
+                // 创建测试表
+                stmt.execute("CREATE TABLE IF NOT EXISTS test (id SERIAL PRIMARY KEY, name VARCHAR(50))");
+                stmt.execute("INSERT INTO test (name) VALUES ('" + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()) + "')");
+
+                // 查询数据
+                ResultSet rs = stmt.executeQuery("SELECT * FROM test order by id desc");
+                while (rs.next()) {
+                    String x = "ID: " + rs.getInt("id") + ", Name: " + rs.getString("name");
+                    response.end(x);
+                    break;
+                }
+
+            } catch (Exception e) {
+                log.error("error", e);
+                response.end("error," + e.getMessage());
+            }
         };
     }
 

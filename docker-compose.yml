@@ -1,0 +1,23 @@
+services:
+  app:
+    build: .
+    container_name: java_app
+    depends_on:
+      - db
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/mydatabase
+      DB_USER: myuser
+      DB_PASSWORD: mypassword
+    ports:
+      - "8080:8080"
+
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_DB: mydatabase
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+    ports:
+      - "5432:5432"
